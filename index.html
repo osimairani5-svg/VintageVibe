@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VintageVibe - E-Commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F5EFEB;
+        }
+        .font-serif-vintage {
+            font-family: 'Playfair Display', serif;
+        }
+        .page-section {
+            display: none;
+            min-height: 100vh;
+        }
+        .page-section.active {
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body class="text-neutral-800">
+
+    <div id="admin-bar" class="bg-red-700 text-white text-xs px-6 py-2 hidden justify-between items-center fixed top-0 left-0 w-full z-[100] font-medium tracking-wide shadow-md">
+        <span>🔧 PANEL ADMIN: Mode Maintenance sedang <strong id="maintenance-status-text">NONAKTIF</strong></span>
+        <div class="flex space-x-3">
+            <button onclick="toggleMaintenance()" id="maintenance-btn" class="bg-white text-red-700 px-3 py-0.5 rounded font-bold hover:bg-neutral-100 transition cursor-pointer">Aktifkan Maintenance</button>
+            <button onclick="logoutAdmin()" class="bg-neutral-900 text-white px-3 py-0.5 rounded hover:bg-neutral-800 transition cursor-pointer">Keluar Admin</button>
+        </div>
+    </div>
+
+    <div id="maintenance-screen" class="fixed inset-0 bg-[#2E311B] z-[99] hidden flex-col items-center justify-center p-6 text-center text-[#F5EFEB]">
+        <h1 class="font-serif-vintage text-5xl md:text-6xl tracking-wide mb-4">VintageVibe</h1>
+        <div class="w-16 h-1 bg-[#E3DAC9] mb-6"></div>
+        <h2 class="text-xl md:text-2xl font-semibold mb-2 tracking-wide">Sedang Dalam Perbaikan</h2>
+        <p class="text-neutral-300 max-w-md mx-auto text-sm leading-relaxed mb-8">Kami sedang memperbarui koleksi dan melakukan pemeliharaan sistem demi kenyamanan belanja Anda. Kami akan segera kembali!</p>
+        <button onclick="switchPage('loginpage')" class="text-xs text-neutral-400 underline hover:text-white cursor-pointer tracking-widest">ADMIN LOGIN</button>
+    </div>
+
+    <nav id="main-nav" class="fixed top-0 left-0 w-full bg-[#F5EFEB]/90 backdrop-blur-md z-50 border-b border-neutral-200/50 px-6 py-4 flex justify-between items-center transition-all duration-300">
+        <a href="#" onclick="switchPage('homepage')" class="font-serif-vintage text-2xl font-semibold tracking-wide">VintageVibe</a>
+        
+        <div class="hidden md:flex space-x-8 text-sm font-medium tracking-wide">
+            <button onclick="switchPage('homepage')" class="hover:text-amber-800 transition cursor-pointer">Beranda</button>
+            <button onclick="switchPage('shop')" class="hover:text-amber-800 transition cursor-pointer">Shop</button>
+            <button onclick="switchPage('newin')" class="hover:text-amber-800 transition cursor-pointer">New In</button>
+            <button onclick="switchPage('sale')" class="hover:text-amber-800 transition cursor-pointer">Sale</button>
+            <button onclick="switchPage('lookbook')" class="hover:text-amber-800 transition cursor-pointer">LookBook</button>
+        </div>
+
+        <div class="flex items-center space-x-5 text-neutral-700">
+            <button class="hover:text-black cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.603 10.601Z" /></svg>
+            </button>
+            
+            <div class="flex items-center space-x-2">
+                <span id="user-display-name" class="text-xs font-semibold tracking-wide text-amber-900 hidden"></span>
+                <button id="auth-btn" onclick="handleAuthNav()" class="hover:text-black cursor-pointer flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
+                </button>
+                <button id="logout-btn" onclick="logout()" class="text-xs text-red-700 underline hidden cursor-pointer ml-1">Logout</button>
+            </div>
+
+            <button class="hover:text-black cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m11.356-1.993 1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 0 1-1.12-1.243l1.264-12A1.125 1.125 0 0 1 5.513 7.5h12.974c.576 0 1.059.435 1.119 1.007ZM8.625 10.5a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm7.5 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Z" /></svg>
+            </button>
+        </div>
+    </nav>
+
+    <main id="main-content">
+        <section id="homepage" class="page-section active pt-24">
+            <div class="mx-6 mt-4 h-[260px] bg-[#E3DAC9] rounded-2xl flex items-center justify-center shadow-sm">
+                <span class="text-neutral-500 font-medium tracking-widest text-sm">[ HERO BANNER PLACEHOLDER ]</span>
+            </div>
+            <div class="flex-grow flex flex-col items-center justify-center py-20 px-6 text-center">
+                <h1 class="font-serif-vintage text-5xl md:text-6xl tracking-wide mb-4">Vintage Vibe</h1>
+                <p class="text-neutral-500 max-w-md mx-auto mb-8 text-sm leading-relaxed">Temukan koleksi pakaian vintage terbaik untuk melengkapi gaya klasik dan modern Anda.</p>
+                <button onclick="switchPage('shop')" class="bg-neutral-900 text-white px-8 py-3 rounded-full text-sm font-medium hover:bg-neutral-800 transition shadow-md cursor-pointer">Lihat Produk</button>
+            </div>
+            <footer class="bg-[#2E311B] text-[#F5EFEB] py-10 px-6 text-center text-xs tracking-wider mt-auto">
+                &copy; 2026 VINTAGE VIBE. ALL RIGHTS RESERVED.
+            </footer>
+        </section>
+
+        <section id="shop" class="page-section pt-24">
+            <div class="flex-grow flex items-center justify-center py-40">
+                <h1 class="font-serif-vintage text-6xl md:text-8xl tracking-widest text-neutral-900">SHOP</h1>
+            </div>
+            <footer class="bg-[#2E311B] text-[#F5EFEB] py-10 px-6 text-center text-xs tracking-wider mt-auto">
+                &copy; 2026 VINTAGE VIBE. ALL RIGHTS RESERVED.
+            </footer>
+        </section>
+
+        <section id="newin" class="page-section pt-24">
+            <div class="flex-grow flex items-center justify-center py-40">
+                <h1 class="font-serif-vintage text-6xl md:text-8xl tracking-widest text-neutral-900">NEW IN</h1>
+            </div>
+            <footer class="bg-[#2E311B] text-[#F5EFEB] py-10 px-6 text-center text-xs tracking-wider mt-auto">
+                &copy; 2026 VINTAGE VIBE. ALL RIGHTS RESERVED.
+            </footer>
+        </section>
+
+        <section id="sale" class="page-section pt-24">
+            <div class="flex-grow flex items-center justify-center py-40">
+                <h1 class="font-serif-vintage text-6xl md:text-8xl tracking-widest text-neutral-900">SALE</h1>
+            </div>
+            <footer class="bg-[#2E311B] text-[#F5EFEB] py-10 px-6 text-center text-xs tracking-wider mt-auto">
+                &copy; 2026 VINTAGE VIBE. ALL RIGHTS RESERVED.
+            </footer>
+        </section>
+
+        <section id="lookbook" class="page-section pt-24">
+            <div class="flex-grow flex items-center justify-center py-40">
+                <h1 class="font-serif-vintage text-6xl md:text-8xl tracking-widest text-neutral-900">LOOKBOOK</h1>
+            </div>
+            <footer class="bg-[#2E311B] text-[#F5EFEB] py-10 px-6 text-center text-xs tracking-wider mt-auto">
+                &copy; 2026 VINTAGE VIBE. ALL RIGHTS RESERVED.
+            </footer>
+        </section>
+    </main>
+
+    <section id="loginpage" class="page-section hidden fixed inset-0 z-50 flex items-center justify-center bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=1600&auto=format&fit=crop');">
+        <div class="absolute inset-0 bg-black/20"></div>
+        
+        <div class="relative z-10 w-full max-w-md mx-4 p-8 flex flex-col items-center">
+            <h2 class="font-serif-vintage italic text-5xl text-white mb-10 drop-shadow-md select-none">VintageVibe</h2>
+            
+            <form class="w-full space-y-4" onsubmit="loginUser(event)">
+                <div>
+                    <input type="text" id="login-username" required placeholder="Username" class="w-full bg-[#E3DAC9] text-neutral-800 placeholder-neutral-500 px-5 py-4 focus:outline-none shadow-lg text-lg font-serif-vintage">
+                </div>
+                <div>
+                    <input type="password" id="login-password" required placeholder="Password" class="w-full bg-[#E3DAC9] text-neutral-800 placeholder-neutral-500 px-5 py-4 focus:outline-none shadow-lg text-lg font-serif-vintage border-2 border-sky-400">
+                </div>
+                
+                <div class="pt-2 text-center">
+                    <p class="text-white text-xs">Belum punya akun? <button type="button" onclick="switchPage('registerpage')" class="underline font-bold hover:text-amber-200 cursor-pointer">Daftar di sini</button></p>
+                </div>
+
+                <div class="pt-4 flex justify-between items-center w-full">
+                    <button type="button" onclick="switchPage('homepage')" class="text-white text-sm underline hover:text-neutral-200 cursor-pointer">Kembali</button>
+                    <button type="submit" class="bg-neutral-950 text-white px-6 py-2 text-sm hover:bg-neutral-800 transition cursor-pointer shadow-md">Masuk</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section id="registerpage" class="page-section hidden fixed inset-0 z-50 flex items-center justify-center bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=1600&auto=format&fit=crop');">
+        <div class="absolute inset-0 bg-black/20"></div>
+        
+        <div class="relative z-10 w-full max-w-md mx-4 p-8 flex flex-col items-center">
+            <h2 class="font-serif-vintage italic text-5xl text-white mb-6 drop-shadow-md select-none">Daftar Akun</h2>
+            
+            <form class="w-full space-y-4" onsubmit="registerUser(event)">
+                <div>
+                    <input type="text" id="reg-username" required placeholder="Buat Username" class="w-full bg-[#E3DAC9] text-neutral-800 placeholder-neutral-500 px-5 py-4 focus:outline-none shadow-lg text-lg font-serif-vintage">
+                </div>
+                <div>
+                    <input type="password" id="reg-password" required placeholder="Buat Password" class="w-full bg-[#E3DAC9] text-neutral-800 placeholder-neutral-500 px-5 py-4 focus:outline-none shadow-lg text-lg font-serif-vintage">
+                </div>
+                
+                <div class="pt-2 text-center">
+                    <p class="text-white text-xs">Sudah punya akun? <button type="button" onclick="switchPage('loginpage')" class="underline font-bold hover:text-amber-200 cursor-pointer">Login di sini</button></p>
+                </div>
+
+                <div class="pt-4 flex justify-between items-center w-full">
+                    <button type="button" onclick="switchPage('homepage')" class="text-white text-sm underline hover:text-neutral-200 cursor-pointer">Batal</button>
+                    <button type="submit" class="bg-amber-800 text-white px-6 py-2 text-sm hover:bg-amber-700 transition cursor-pointer shadow-md">Daftar</button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <script>
+        // KREDENSI LOGIN UTK ADMIN (Silakan ganti demi keamanan kamu)
+        const ADMIN_USERNAME = "adminvintage";
+        const ADMIN_PASSWORD = "vintagevibepassword123";
+
+        document.addEventListener("DOMContentLoaded", function() {
+            checkLoginStatus();
+            checkMaintenanceMode();
+        });
+
+        function switchPage(pageId) {
+            const sections = document.querySelectorAll('.page-section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+                section.classList.add('hidden'); 
+            });
+
+            const nav = document.getElementById('main-nav');
+            nav.classList.remove('hidden');
+
+            const activeSection = document.getElementById(pageId);
+            if(activeSection) {
+                activeSection.classList.remove('hidden');
+                activeSection.classList.add('active');
+                
+                if(pageId === 'loginpage' || pageId === 'registerpage') {
+                    nav.classList.add('hidden');
+                }
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- SISTEM LOGIN (MENGAKOMODASI USER DAN ADMIN) ---
+        function loginUser(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('login-username').value.trim();
+            const passwordInput = document.getElementById('login-password').value;
+
+            // 1. Cek Apakah yang Login adalah Admin
+            if(usernameInput === ADMIN_USERNAME && passwordInput === ADMIN_PASSWORD) {
+                localStorage.setItem('isAdminLoggedIn', 'true');
+                alert('Sistem mengenali Anda sebagai Admin Utama.');
+                
+                document.getElementById('login-username').value = '';
+                document.getElementById('login-password').value = '';
+                
+                checkLoginStatus();
+                checkMaintenanceMode();
+                switchPage('homepage');
+                return;
+            }
+
+            // 2. Jika Bukan Admin, Cek Database User Lokal
+            let users = JSON.parse(localStorage.getItem('vintageVibeUsers')) || {};
+
+            if(users[usernameInput] && users[usernameInput] === passwordInput) {
+                localStorage.setItem('currentUser', usernameInput);
+                alert('Selamat datang kembali, ' + usernameInput + '!');
+                
+                document.getElementById('login-username').value = '';
+                document.getElementById('login-password').value = '';
+                
+                checkLoginStatus(); 
+                switchPage('homepage');
+            } else {
+                alert('Username atau Password tidak cocok.');
+            }
+        }
+
+        // --- MANAJEMEN MODE MAINTENANCE (PERBAIKAN WEBSITE) ---
+        function checkMaintenanceMode() {
+            const isMaintenance = localStorage.getItem('isMaintenanceActive') === 'true';
+            const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
+            
+            const maintenanceScreen = document.getElementById('maintenance-screen');
+            const adminBar = document.getElementById('admin-bar');
+            const mainNav = document.getElementById('main-nav');
+
+            // Set UI Bar Admin
+            if(isAdmin) {
+                adminBar.classList.remove('hidden');
+                adminBar.classList.add('flex');
+                mainNav.classList.add('mt-8'); // Geser navbar ke bawah agar tidak tertutup admin bar
+                
+                if(isMaintenance) {
+                    document.getElementById('maintenance-status-text').innerText = "AKTIF";
+                    document.getElementById('maintenance-btn').innerText = "Matikan Maintenance";
+                } else {
+                    document.getElementById('maintenance-status-text').innerText = "NONAKTIF";
+                    document.getElementById('maintenance-btn').innerText = "Aktifkan Maintenance";
+                }
+            } else {
+                adminBar.classList.remove('flex');
+                adminBar.classList.add('hidden');
+                mainNav.classList.remove('mt-8');
+            }
+
+            // Aturan Kunci Website
+            if(isMaintenance && !isAdmin) {
+                // Kunci web untuk user umum
+                maintenanceScreen.classList.remove('hidden');
+                maintenanceScreen.classList.add('flex');
+            } else {
+                // Lepas kunci
+                maintenanceScreen.classList.remove('flex');
+                maintenanceScreen.classList.add('hidden');
+            }
+        }
+
+        function toggleMaintenance() {
+            const isCurrentlyActive = localStorage.getItem('isMaintenanceActive') === 'true';
+            localStorage.setItem('isMaintenanceActive', !isCurrentlyActive);
+            alert(`Mode Maintenance berhasil di-${!isCurrentlyActive ? 'Aktifkan' : 'Nonaktifkan'}!`);
+            checkMaintenanceMode();
+        }
+
+        function logoutAdmin() {
+            localStorage.removeItem('isAdminLoggedIn');
+            alert('Keluar dari sesi Admin.');
+            checkLoginStatus();
+            checkMaintenanceMode();
+            switchPage('homepage');
+        }
+
+        // --- SISTEM USER UMUM ---
+        function registerUser(e) {
+            e.preventDefault();
+            const usernameInput = document.getElementById('reg-username').value.trim();
+            const passwordInput = document.getElementById('reg-password').value;
+
+            if(usernameInput === ADMIN_USERNAME) {
+                alert('Nama pengguna ini dilindungi sistem.');
+                return;
+            }
+
+            let users = JSON.parse(localStorage.getItem('vintageVibeUsers')) || {};
+            if(users[usernameInput]) {
+                alert('Username sudah terdaftar.');
+                return;
+            }
+
+            users[usernameInput] = passwordInput;
+            localStorage.setItem('vintageVibeUsers', JSON.stringify(users));
+            alert('Registrasi Berhasil!');
+            switchPage('loginpage');
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            alert('Anda telah keluar.');
+            checkLoginStatus();
+            switchPage('homepage');
+        }
+
+        function checkLoginStatus() {
+            const currentUser = localStorage.getItem('currentUser');
+            const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
+            const userDisplay = document.getElementById('user-display-name');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            if(isAdmin) {
+                userDisplay.innerText = "👑 Admin Utama";
+                userDisplay.classList.remove('hidden');
+                logoutBtn.classList.add('hidden'); // Logout admin pakai bar merah di atas
+            } else if(currentUser) {
+                userDisplay.innerText = "Hi, " + currentUser;
+                userDisplay.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+            } else {
+                userDisplay.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+            }
+        }
+
+        function handleAuthNav() {
+            if(localStorage.getItem('currentUser') || localStorage.getItem('isAdminLoggedIn') === 'true') {
+                alert('Anda sudah masuk dalam sistem.');
+            } else {
+                switchPage('loginpage');
+            }
+        }
+    </script>
+</body>
+</html>
