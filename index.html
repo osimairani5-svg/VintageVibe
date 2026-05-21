@@ -29,14 +29,6 @@
 </head>
 <body class="text-neutral-800">
 
-    <div id="admin-bar" class="bg-red-700 text-white text-xs px-6 py-2 hidden justify-between items-center fixed top-0 left-0 w-full z-[100] font-medium tracking-wide shadow-md">
-        <span>🔧 PANEL ADMIN: Mode Maintenance sedang <strong id="maintenance-status-text">NONAKTIF</strong></span>
-        <div class="flex space-x-3">
-            <button onclick="toggleMaintenance()" id="maintenance-btn" class="bg-white text-red-700 px-3 py-0.5 rounded font-bold hover:bg-neutral-100 transition cursor-pointer">Aktifkan Maintenance</button>
-            <button onclick="logoutAdmin()" class="bg-neutral-900 text-white px-3 py-0.5 rounded hover:bg-neutral-800 transition cursor-pointer">Keluar Admin</button>
-        </div>
-    </div>
-
     <div id="maintenance-screen" class="fixed inset-0 bg-[#2E311B] z-[99] hidden flex-col items-center justify-center p-6 text-center text-[#F5EFEB]">
         <h1 class="font-serif-vintage text-5xl md:text-6xl tracking-wide mb-4">VintageVibe</h1>
         <div class="w-16 h-1 bg-[#E3DAC9] mb-6"></div>
@@ -45,7 +37,7 @@
         <button onclick="switchPage('loginpage')" class="text-xs text-neutral-400 underline hover:text-white cursor-pointer tracking-widest">ADMIN LOGIN</button>
     </div>
 
-    <nav id="main-nav" class="fixed top-0 left-0 w-full bg-[#F5EFEB]/90 backdrop-blur-md z-50 border-b border-neutral-200/50 px-6 py-4 flex justify-between items-center transition-all duration-300">
+    <nav id="main-nav" class="fixed top-0 left-0 w-full bg-[#F5EFEB]/90 backdrop-blur-md z-50 border-b border-neutral-200/50 px-6 py-4 flex justify-between items-center">
         <a href="#" onclick="switchPage('homepage')" class="font-serif-vintage text-2xl font-semibold tracking-wide">VintageVibe</a>
         
         <div class="hidden md:flex space-x-8 text-sm font-medium tracking-wide">
@@ -179,8 +171,14 @@
         </div>
     </section>
 
+    <button id="secret-admin-btn" onclick="verifyAndToggleMaintenance()" title="System Control" class="fixed bottom-4 left-4 z-[101] w-8 h-8 rounded-full bg-neutral-900/5 hover:bg-neutral-900/20 text-neutral-500/20 hover:text-neutral-600 flex items-center justify-center transition-all duration-300 cursor-pointer backdrop-blur-[1px]">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9" />
+        </svg>
+    </button>
+
     <script>
-        // KREDENSI LOGIN UTK ADMIN (Silakan ganti demi keamanan kamu)
+        // KREDENSI ADMIN UTAMA
         const ADMIN_USERNAME = "adminvintage";
         const ADMIN_PASSWORD = "vintagevibepassword123";
 
@@ -211,13 +209,11 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        // --- SISTEM LOGIN (MENGAKOMODASI USER DAN ADMIN) ---
         function loginUser(e) {
             e.preventDefault();
             const usernameInput = document.getElementById('login-username').value.trim();
             const passwordInput = document.getElementById('login-password').value;
 
-            // 1. Cek Apakah yang Login adalah Admin
             if(usernameInput === ADMIN_USERNAME && passwordInput === ADMIN_PASSWORD) {
                 localStorage.setItem('isAdminLoggedIn', 'true');
                 alert('Sistem mengenali Anda sebagai Admin Utama.');
@@ -231,9 +227,7 @@
                 return;
             }
 
-            // 2. Jika Bukan Admin, Cek Database User Lokal
             let users = JSON.parse(localStorage.getItem('vintageVibeUsers')) || {};
-
             if(users[usernameInput] && users[usernameInput] === passwordInput) {
                 localStorage.setItem('currentUser', usernameInput);
                 alert('Selamat datang kembali, ' + usernameInput + '!');
@@ -248,51 +242,81 @@
             }
         }
 
-        // --- MANAJEMEN MODE MAINTENANCE (PERBAIKAN WEBSITE) ---
+        // --- MANAJEMEN MAINTENANCE MODE ---
         function checkMaintenanceMode() {
-            const isMaintenance = localStorage.getItem('isMaintenanceActive') === 'true';
+            const isMaintenance = localStorage.getItem('globalMaintenanceActive') === 'true';
             const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
             
             const maintenanceScreen = document.getElementById('maintenance-screen');
-            const adminBar = document.getElementById('admin-bar');
-            const mainNav = document.getElementById('main-nav');
+            const powerBtn = document.getElementById('secret-admin-btn');
 
-            // Set UI Bar Admin
-            if(isAdmin) {
-                adminBar.classList.remove('hidden');
-                adminBar.classList.add('flex');
-                mainNav.classList.add('mt-8'); // Geser navbar ke bawah agar tidak tertutup admin bar
-                
-                if(isMaintenance) {
-                    document.getElementById('maintenance-status-text').innerText = "AKTIF";
-                    document.getElementById('maintenance-btn').innerText = "Matikan Maintenance";
-                } else {
-                    document.getElementById('maintenance-status-text').innerText = "NONAKTIF";
-                    document.getElementById('maintenance-btn').innerText = "Aktifkan Maintenance";
-                }
+            // Mengubah tampilan tombol power khusus untuk mendeteksi status saat ini
+            if(isMaintenance) {
+                powerBtn.classList.remove('bg-neutral-900/5', 'text-neutral-500/20');
+                powerBtn.classList.add('bg-red-600/80', 'text-white', 'animate-pulse'); // Berkedip samar merah jika sedang mengunci
             } else {
-                adminBar.classList.remove('flex');
-                adminBar.classList.add('hidden');
-                mainNav.classList.remove('mt-8');
+                powerBtn.classList.remove('bg-red-600/80', 'animate-pulse');
+                powerBtn.classList.add('bg-neutral-900/5', 'text-neutral-500/20'); // Normal samar kembali
             }
 
-            // Aturan Kunci Website
+            // Kunci Layar Utama
             if(isMaintenance && !isAdmin) {
-                // Kunci web untuk user umum
                 maintenanceScreen.classList.remove('hidden');
                 maintenanceScreen.classList.add('flex');
             } else {
-                // Lepas kunci
                 maintenanceScreen.classList.remove('flex');
                 maintenanceScreen.classList.add('hidden');
             }
         }
 
-        function toggleMaintenance() {
-            const isCurrentlyActive = localStorage.getItem('isMaintenanceActive') === 'true';
-            localStorage.setItem('isMaintenanceActive', !isCurrentlyActive);
-            alert(`Mode Maintenance berhasil di-${!isCurrentlyActive ? 'Aktifkan' : 'Nonaktifkan'}!`);
-            checkMaintenanceMode();
+        // --- SISTEM VERIFIKASI PASSWORD RAHASIA ---
+        function verifyAndToggleMaintenance() {
+            const isCurrentlyActive = localStorage.getItem('globalMaintenanceActive') === 'true';
+            const actionText = !isCurrentlyActive ? 'MENGUNCI (Maintenance Mode)' : 'MEMBUKA KEMBALI';
+            
+            // Minta input password langsung melalui jendela prompt aman browser
+            const inputPassword = prompt(`TINDAKAN SISTEM:\nAnda akan ${actionText} website VintageVibe.\n\nSilakan masukkan Password Admin untuk melanjutkan:`);
+            
+            // Batalkan jika menekan tombol cancel atau mengosongkan input
+            if (inputPassword === null) return; 
+
+            // Validasi Password
+            if (inputPassword === ADMIN_PASSWORD) {
+                localStorage.setItem('globalMaintenanceActive', !isCurrentlyActive);
+                alert(`Verifikasi Berhasil! Website resmi telah di-${!isCurrentlyActive ? 'Kunci' : 'Buka kembali'}.`);
+                location.reload(); // Segarkan halaman untuk memproses perubahan status kunci
+            } else {
+                alert('Password salah! Akses ditolak sistem.');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('currentUser');
+            alert('Anda telah keluar.');
+            checkLoginStatus();
+            switchPage('homepage');
+        }
+
+        function checkLoginStatus() {
+            const currentUser = localStorage.getItem('currentUser');
+            const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
+            const userDisplay = document.getElementById('user-display-name');
+            const logoutBtn = document.getElementById('logout-btn');
+
+            if(isAdmin) {
+                userDisplay.innerText = "👑 Admin Utama";
+                userDisplay.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                logoutBtn.setAttribute('onclick', 'logoutAdmin()');
+            } else if(currentUser) {
+                userDisplay.innerText = "Hi, " + currentUser;
+                userDisplay.classList.remove('hidden');
+                logoutBtn.classList.remove('hidden');
+                logoutBtn.setAttribute('onclick', 'logout()');
+            } else {
+                userDisplay.classList.add('hidden');
+                logoutBtn.classList.add('hidden');
+            }
         }
 
         function logoutAdmin() {
@@ -303,7 +327,6 @@
             switchPage('homepage');
         }
 
-        // --- SISTEM USER UMUM ---
         function registerUser(e) {
             e.preventDefault();
             const usernameInput = document.getElementById('reg-username').value.trim();
@@ -324,33 +347,6 @@
             localStorage.setItem('vintageVibeUsers', JSON.stringify(users));
             alert('Registrasi Berhasil!');
             switchPage('loginpage');
-        }
-
-        function logout() {
-            localStorage.removeItem('currentUser');
-            alert('Anda telah keluar.');
-            checkLoginStatus();
-            switchPage('homepage');
-        }
-
-        function checkLoginStatus() {
-            const currentUser = localStorage.getItem('currentUser');
-            const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true';
-            const userDisplay = document.getElementById('user-display-name');
-            const logoutBtn = document.getElementById('logout-btn');
-
-            if(isAdmin) {
-                userDisplay.innerText = "👑 Admin Utama";
-                userDisplay.classList.remove('hidden');
-                logoutBtn.classList.add('hidden'); // Logout admin pakai bar merah di atas
-            } else if(currentUser) {
-                userDisplay.innerText = "Hi, " + currentUser;
-                userDisplay.classList.remove('hidden');
-                logoutBtn.classList.remove('hidden');
-            } else {
-                userDisplay.classList.add('hidden');
-                logoutBtn.classList.add('hidden');
-            }
         }
 
         function handleAuthNav() {
